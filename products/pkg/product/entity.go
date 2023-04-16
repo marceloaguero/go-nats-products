@@ -21,6 +21,7 @@ type Product struct {
 type Repository interface {
 	Create(product *Product) (*Product, error) // Create permite agregar un producto nuevo al repositorio
 	GetByID(id uint) (*Product, error)         // GetByID permite recuperar un único producto, si existe, del repositorio
+	GetByName(name string) (*Product, error)   // GetByName permite recuperar un único producto por nombre
 	GetAll() ([]*Product, error)               // GetAll permite recuperar, en un slice, todos los productos existentes en el repositorio
 	Update(product *Product) (*Product, error) // Update permite actualizar los datos de un producto
 	Delete(product *Product) error             // Delete elmimina un producto del repositorio
