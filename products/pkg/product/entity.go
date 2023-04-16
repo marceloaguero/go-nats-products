@@ -1,8 +1,8 @@
 package product
 
-// Product describe un producto del sistema
+// Product describe un producto en el sistema
 // Se utiliza gorm (https://gorm.io/) para modelar la entidad Product en la base de datos.
-// Es por ello que en la decalración de los atributos, además del nombre que recibe el atributo en json,
+// Es por ello que en la declaración de los atributos, además del nombre que recibe el atributo en json,
 // también se declaran las características necesarias de gorm.
 type Product struct {
 	ID          uint    `json:"id" gorm:"primaryKey"`                                     // Identificador del producto. Es clave primaria en la tabla de la base de datos
