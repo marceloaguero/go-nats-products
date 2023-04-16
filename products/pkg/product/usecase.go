@@ -1,213 +1,150 @@
-package user
+package product
 
 import (
 	"strings"
 
 	"github.com/BetuelSA/go-helpers/errors"
-	pass "github.com/BetuelSA/go-helpers/password"
 	"github.com/go-playground/validator/v10"
-)
-
-const (
-	minPasswordLength int = 6
 )
 
 var (
 	validate *validator.Validate
 )
 
-// Usecase represents users usecases
-// Extends User entity interface
+// Usecase representa los casos de uso de productos
+// Extiende la interface Product
 type Usecase interface {
 	Repository
-	Login(email, password string) (*User, error)
-	ChangePassword(id uint, oldPassword, newPassword string) (*User, error)
+	// UpdateStock permite modificar el stock de un producto
+	// Por supuesto, se podría lograr el mismo resultado llamando al método Update de la interface Repository
+	// pero lo agregamos sólo para extender dicha interface.
+	UpdateStock(id uint, stock float64) (*Product, error)
 }
 
 type usecase struct {
-	repository  Repository
-	passwordSvc pass.Service
+	repository Repository
 }
 
 // NewUsecase creates a new usecase. Implements the Usecase interface
-func NewUsecase(repo Repository, passSvc pass.Service) Usecase {
+func NewUsecase(repo Repository) Usecase {
 	return &usecase{
-		repository:  repo,
-		passwordSvc: passSvc,
+		repository: repo,
 	}
 }
 
-// Create a new user
-func (u *usecase) Create(user *User) (*User, error) {
-	// Verify email uniqueness
-	user.Email = strings.TrimSpace(user.Email)
-	_, err := u.GetByEmail(user.Email)
+// Create agrega un nuevo producto
+func (u *usecase) Create(product *Product) (*Product, error) {
+	// Verify name uniqueness
+	product.Name = strings.TrimSpace(product.Name)
+	_, err := u.GetByName(product.Name)
 	if err == nil {
-		return nil, errors.BadRequest.Newf("user with email %s already exists", user.Email)
+		return nil, errors.BadRequest.Newf("product with name %s already exists", product.Name)
 	}
-
-	// Verify password lengh
-	if len(user.Password) < minPasswordLength {
-		return nil, errors.BadRequest.Newf("password must have at least %d characters", minPasswordLength)
-	}
-
-	hash, err := u.passwordSvc.Hash(user.Password)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't obtain password hash")
-	}
-	user.Hash = hash
-	user.Surname = strings.TrimSpace(user.Surname)
-	user.Name = strings.TrimSpace(user.Name)
 
 	validate := validator.New()
-	err = validate.Struct(user)
+	err = validate.Struct(product)
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		return nil, errors.BadRequest.Wrap(validationErrors, "error during user data validation")
+		return nil, errors.BadRequest.Wrap(validationErrors, "error during product data validation")
 	}
 
-	user, err = u.repository.Create(user)
+	product, err = u.repository.Create(product)
 	if err != nil {
-		return nil, errors.Wrap(err, "error creating a new user")
+		return nil, errors.Wrap(err, "error creating a new product")
 	}
 
-	return user, nil
+	return product, nil
 }
 
-// GetByID retrieves a user from repo by ID
-func (u *usecase) GetByID(id uint) (*User, error) {
-	user, err := u.repository.GetByID(id)
+// GetByID recupera un producto por ID
+func (u *usecase) GetByID(id uint) (*Product, error) {
+	product, err := u.repository.GetByID(id)
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching a user")
+		return nil, errors.Wrap(err, "error fetching a product")
 	}
 
-	return user, nil
+	return product, nil
 }
 
-// GetByEmail retrieves a user from repo by email address
-func (u *usecase) GetByEmail(email string) (*User, error) {
-	user, err := u.repository.GetByEmail(email)
+// GetByName recupera un producto por su nombre
+func (u *usecase) GetByName(name string) (*Product, error) {
+	product, err := u.repository.GetByName(name)
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching a user")
+		return nil, errors.Wrap(err, "error fetching a product")
 	}
 
-	return user, nil
+	return product, nil
 }
 
-// GetAll retrieves every user
-func (u *usecase) GetAll() ([]*User, error) {
-	users, err := u.repository.GetAll()
+// GetAll recupera todos los productos
+func (u *usecase) GetAll() ([]*Product, error) {
+	products, err := u.repository.GetAll()
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching all users")
+		return nil, errors.Wrap(err, "error fetching all products")
 	}
 
-	return users, nil
+	return products, nil
 }
 
-// Update modifies an existing user
-func (u *usecase) Update(user *User) (*User, error) {
+// Update modifica un producto existente
+func (u *usecase) Update(product *Product) (*Product, error) {
 	// Trim spaces
-	user.Surname = strings.TrimSpace(user.Surname)
-	user.Name = strings.TrimSpace(user.Name)
-	user.Password = strings.TrimSpace(user.Password)
+	product.Name = strings.TrimSpace(product.Name)
 
-	formerUser := &User{}
+	formerProduct := &Product{}
 
-	// Verify email uniqueness
-	formerUser, err := u.GetByEmail(user.Email)
-	if (err == nil) && (formerUser.ID != user.ID) {
-		return nil, errors.BadRequest.Newf("user with email %s already exists", user.Email)
+	// Verificar la unicidad del nombre
+	formerProduct, err := u.GetByName(product.Name)
+	if (err == nil) && (formerProduct.ID != product.ID) {
+		return nil, errors.BadRequest.Newf("product with name %s already exists", product.Name)
 	}
-
-	// Verify password
-	if len(user.Password) > 0 {
-		if len(user.Password) < minPasswordLength {
-			return nil, errors.BadRequest.Newf("password must have at least %d characters", minPasswordLength)
-		}
-	}
-
-	hash, err := u.passwordSvc.Hash(user.Password)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't obtain password hash")
-	}
-	user.Hash = hash
 
 	validate = validator.New()
-	if err := validate.Struct(user); err != nil {
+	if err := validate.Struct(product); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		return nil, errors.BadRequest.Wrap(validationErrors, "error during user data validation")
+		return nil, errors.BadRequest.Wrap(validationErrors, "error during product data validation")
 	}
 
-	formerUser, err = u.GetByID(user.ID)
+	formerProduct, err = u.GetByID(product.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "user with id %d does not exist", user.ID)
+		return nil, errors.Wrapf(err, "product with id %d does not exist", product.ID)
 	}
 
-	user, err = u.repository.Update(user)
+	product, err = u.repository.Update(product)
 	if err != nil {
-		return nil, errors.Wrap(err, "error updating user")
+		return nil, errors.Wrap(err, "error updating product")
 	}
 
-	return user, nil
+	return product, nil
 }
 
-// Delete a user
-func (u *usecase) Delete(user *User) error {
-	_, err := u.GetByID(user.ID)
+// Delete elimina un producto
+func (u *usecase) Delete(product *Product) error {
+	_, err := u.GetByID(product.ID)
 	if err != nil {
-		return errors.BadRequest.Wrapf(err, "user with id %d does not exist", user.ID)
+		return errors.BadRequest.Wrapf(err, "product with id %d does not exist", product.ID)
 	}
 
-	if err := u.repository.Delete(user); err != nil {
-		return errors.Wrap(err, "error deleting user")
+	if err := u.repository.Delete(product); err != nil {
+		return errors.Wrap(err, "error deleting product")
 	}
 
 	return nil
 }
 
-// Login validates a user by email/password
-func (u *usecase) Login(email, password string) (*User, error) {
-	user, err := u.GetByEmail(email)
+// UpdateStock permite modificar el stock de un producto
+func (u *usecase) UpdateStock(id uint, stock float64) (*Product, error) {
+	product, err := u.GetByID(id)
 	if err != nil {
-		return nil, errors.Unauthorized.Wrap(err, "wrong user email")
+		return nil, errors.BadRequest.Wrapf(err, "product with id %d does not exist", id)
 	}
 
-	passwordSvc := pass.NewService()
-	err = passwordSvc.CheckPassword(password, user.Hash)
-	if err != nil {
-		return nil, errors.Unauthorized.Wrap(err, "bad password")
+	if stock < 0 {
+		return nil, errors.BadRequest.New("stock can't be negative")
 	}
 
-	return user, nil
-}
+	product.Stock = stock
+	_, err = u.Update(product)
 
-// ChangePassword permits that a user can change her password
-func (u *usecase) ChangePassword(id uint, oldPassword, newPassword string) (*User, error) {
-	user, err := u.GetByID(id)
-	if err != nil {
-		return nil, errors.BadRequest.Wrapf(err, "user with id %d does not exist", id)
-	}
-
-	// Verify current password
-	passwordSvc := pass.NewService()
-	err = passwordSvc.CheckPassword(oldPassword, user.Hash)
-	if err != nil {
-		return nil, errors.Unauthorized.Wrapf(err, "bad current password")
-	}
-
-	// Verify new password length
-	if len(newPassword) < minPasswordLength {
-		return nil, errors.BadRequest.Newf("new password must have at least %d characters", minPasswordLength)
-	}
-
-	hash, err := u.passwordSvc.Hash(newPassword)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't obtain new passwors hash")
-	}
-
-	user.Password = newPassword
-	user.Hash = hash
-	_, err = u.Update(user)
-
-	return user, err
+	return product, err
 }
