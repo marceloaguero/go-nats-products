@@ -1,0 +1,63 @@
+version: "3"
+
+services:
+
+  db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=supersecret
+      - MYSQL_DATABASE=go-nats-products
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=supersecret
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["/bin/bash", 'mysqladmin ping -u user -psupersecret']
+      interval: 10s
+      timeout: 2s
+      retries: 10
+
+  nats:
+    image: nats:2.9
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
+
+  products:
+    build:
+      context: ./products
+    image: marceloaguero/go-nats-products-products:local
+    environment:
+      - PORT=8081
+      - DB_DSN=user:supersecret@tcp(db:3306)
+      - DB_NAME=go-nats-products
+      - NATS_URLS=nats://nats:4222
+      - SUBJ_PREFIX=PRODUCTS
+      - QUEUE=products
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+      - nats
+
+  gateway:
+    build:
+      context: ./gateway
+    image: marceloaguero/go-nats-products-gateway:local
+    environment:
+      - PORT=8080
+      - PATH_PREFIX=/gateway
+      - NATS_URLS=nats://nats:4222
+      - PRODUCTS_SUBJ_PREFIX=PRODUCTS
+      - PRODUCTS_QUEUE=products
+    ports:
+      - "8080:8080"
+    depends_on:
+      - products
+
+volumes:
+  db-data:
+
