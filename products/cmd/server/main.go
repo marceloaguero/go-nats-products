@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/marceloaguero/go-auth-nats-gateway/users/pkg/user"
 	"github.com/marceloaguero/go-nats-products/products/pkg/delivery"
+	"github.com/marceloaguero/go-nats-products/products/pkg/product"
 	repo "github.com/marceloaguero/go-nats-products/products/pkg/repository"
 )
 
@@ -22,7 +22,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	usecase := user.NewUsecase(repository)
+	usecase := product.NewUsecase(repository)
 
 	delivery, err := delivery.NewDelivery(usecase, natsURLs, subjPrefix, queue)
 	if err != nil {
