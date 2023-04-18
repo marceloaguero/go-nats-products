@@ -10,7 +10,7 @@ type Product struct {
 	Description string  `json:"description,omitempty" gorm:"size:250" validate:"lte=250"` // Descripción "larga" del producto, no obligatorio
 	Unit        string  `json:"unit" gorm:"size=32" validate:"required"`                  // Unidad de medida del producto (unidad, metros, litros, etc), hasta 32 caracteres, obligatorio
 	Price       float64 `json:"price" validate:"required"`                                // Precio, obligatorio
-	Stock       float64 `json:"stock,omitempty"`                                          // Cantidad del producto en stock
+	Stock       float64 `json:"stock"`                                                    // Cantidad del producto en stock
 	IsActive    bool    `json:"is_active"`                                                // Indica si el producto está activo. Sólo para utilizar algún atributo de tipo boolean ;-)
 }
 
