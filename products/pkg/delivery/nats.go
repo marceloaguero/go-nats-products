@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"clevergo.tech/jsend"
 	"github.com/marceloaguero/go-nats-products/products/pkg/product"
 	"github.com/nats-io/nats.go"
 )
@@ -48,12 +49,12 @@ func Subscribe(delivery *delivery, nc *nats.Conn, subjPrefix string, queue strin
 	return nil
 }
 
-// func (d *delivery) Create(subj, reply string, product *product.Product) {
 func (d *delivery) Create(msg *nats.Msg) {
 	product := &product.Product{}
 	err := json.Unmarshal(msg.Data, &product)
 	if err != nil {
 		log.Println("Can't unmarshal product")
+
 	}
 
 	productCreated, err := d.usecase.Create(product)
@@ -61,13 +62,11 @@ func (d *delivery) Create(msg *nats.Msg) {
 		log.Printf("Create product failed. Err: %s", err.Error())
 	}
 
-	newProduct, err := json.Marshal(&productCreated)
+	jsendReply := jsend.New(productCreated)
+	reply, err := json.Marshal(&jsendReply)
 	if err != nil {
-		log.Println("Can't marshal new product")
+		log.Println("Can't marshal jsend reply")
 	}
 
-	log.Printf("New product (unmarshaled): %v", productCreated)
-	log.Printf("New product (marshaled): %s", newProduct)
-
-	d.nc.Publish(msg.Reply, newProduct)
+	d.nc.Publish(msg.Reply, reply)
 }

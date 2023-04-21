@@ -1,7 +1,6 @@
 package products
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,11 +33,8 @@ func NewDelivery(nc *nats.Conn, subjPrefix, queue string) Delivery {
 }
 
 func (d *delivery) Create(c *gin.Context) {
-	//var newProduct *product.Product
-	//productCreated := &product.Product{}
 	createSubj := d.subjPrefix + ".create"
 	data, err := ioutil.ReadAll(c.Request.Body)
-	log.Printf("Data: %s", data)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
@@ -50,9 +46,5 @@ func (d *delivery) Create(c *gin.Context) {
 		log.Printf("Request err: %v", err)
 	}
 
-	//err = json.Unmarshal(msg.Data, &replyData)
-	log.Printf("Reply: %s", msg.Data)
-	replyData := fmt.Sprintf("%s", msg.Data)
-
-	c.JSON(http.StatusOK, replyData)
+	c.Data(http.StatusCreated, "application/json", msg.Data)
 }
