@@ -61,13 +61,13 @@ func (d *delivery) Create(msg *nats.Msg) {
 		log.Printf("Create product failed. Err: %s", err.Error())
 	}
 
-	newProduct, err := json.Marshal(productCreated)
+	newProduct, err := json.Marshal(&productCreated)
 	if err != nil {
 		log.Println("Can't marshal new product")
 	}
 
 	log.Printf("New product (unmarshaled): %v", productCreated)
-	log.Printf("New product (marshaled): %v", newProduct)
+	log.Printf("New product (marshaled): %s", newProduct)
 
 	d.nc.Publish(msg.Reply, newProduct)
 }

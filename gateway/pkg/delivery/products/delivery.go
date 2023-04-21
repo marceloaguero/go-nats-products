@@ -1,6 +1,7 @@
 package products
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -50,7 +51,8 @@ func (d *delivery) Create(c *gin.Context) {
 	}
 
 	//err = json.Unmarshal(msg.Data, &replyData)
-	replyData := string(msg.Data[:])
+	log.Printf("Reply: %s", msg.Data)
+	replyData := fmt.Sprintf("%s", msg.Data)
 
-	c.IndentedJSON(http.StatusOK, replyData)
+	c.JSON(http.StatusOK, replyData)
 }
