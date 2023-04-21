@@ -54,12 +54,24 @@ func (d *delivery) Create(msg *nats.Msg) {
 	err := json.Unmarshal(msg.Data, &product)
 	if err != nil {
 		log.Println("Can't unmarshal product")
+		jsendReply := jsend.NewFail(err.Error())
+		reply, _ := json.Marshal(&jsendReply)
 
+		d.nc.Publish(msg.Reply, reply)
+		return
 	}
 
 	productCreated, err := d.usecase.Create(product)
 	if err != nil {
 		log.Printf("Create product failed. Err: %s", err.Error())
+		jsendReply := jsend.NewFail(err.Error())
+		reply, err := json.Marshal(&jsendReply)
+		if err != nil {
+			log.Println("Can't marshal jsend reply")
+		}
+
+		d.nc.Publish(msg.Reply, reply)
+		return
 	}
 
 	jsendReply := jsend.New(productCreated)

@@ -3,8 +3,8 @@ package product
 import (
 	"strings"
 
-	"github.com/BetuelSA/go-helpers/errors"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -38,14 +38,14 @@ func (u *usecase) Create(product *Product) (*Product, error) {
 	product.Name = strings.TrimSpace(product.Name)
 	_, err := u.GetByName(product.Name)
 	if err == nil {
-		return nil, errors.BadRequest.Newf("product with name %s already exists", product.Name)
+		return nil, errors.Errorf("product with name %s already exists", product.Name)
 	}
 
 	validate := validator.New()
 	err = validate.Struct(product)
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		return nil, errors.BadRequest.Wrap(validationErrors, "error during product data validation")
+		return nil, errors.Wrap(validationErrors, "error during product data validation")
 	}
 
 	product, err = u.repository.Create(product)
@@ -96,13 +96,13 @@ func (u *usecase) Update(product *Product) (*Product, error) {
 	// Verificar la unicidad del nombre
 	formerProduct, err := u.GetByName(product.Name)
 	if (err == nil) && (formerProduct.ID != product.ID) {
-		return nil, errors.BadRequest.Newf("product with name %s already exists", product.Name)
+		return nil, errors.Errorf("product with name %s already exists", product.Name)
 	}
 
 	validate = validator.New()
 	if err := validate.Struct(product); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		return nil, errors.BadRequest.Wrap(validationErrors, "error during product data validation")
+		return nil, errors.Wrap(validationErrors, "error during product data validation")
 	}
 
 	formerProduct, err = u.GetByID(product.ID)
@@ -122,7 +122,7 @@ func (u *usecase) Update(product *Product) (*Product, error) {
 func (u *usecase) Delete(product *Product) error {
 	_, err := u.GetByID(product.ID)
 	if err != nil {
-		return errors.BadRequest.Wrapf(err, "product with id %d does not exist", product.ID)
+		return errors.Wrapf(err, "product with id %d does not exist", product.ID)
 	}
 
 	if err := u.repository.Delete(product); err != nil {
@@ -136,11 +136,11 @@ func (u *usecase) Delete(product *Product) error {
 func (u *usecase) UpdateStock(id uint, stock float64) (*Product, error) {
 	product, err := u.GetByID(id)
 	if err != nil {
-		return nil, errors.BadRequest.Wrapf(err, "product with id %d does not exist", id)
+		return nil, errors.Wrapf(err, "product with id %d does not exist", id)
 	}
 
 	if stock < 0 {
-		return nil, errors.BadRequest.New("stock can't be negative")
+		return nil, errors.New("stock can't be negative")
 	}
 
 	product.Stock = stock
