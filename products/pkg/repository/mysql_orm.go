@@ -3,8 +3,8 @@ package mysql_orm
 import (
 	"fmt"
 
-	"github.com/BetuelSA/go-helpers/errors"
 	"github.com/marceloaguero/go-nats-products/products/pkg/product"
+	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -18,7 +18,7 @@ type ormRepo struct {
 func NewRepo(dsName, dbName string) (product.Repository, error) {
 	db, err := dbConnect(dsName, dbName)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't connect to DB")
+		return nil, errors.Wrap(err, "MySQL ORM - Can't connect to DB")
 	}
 
 	db.AutoMigrate(&product.Product{})

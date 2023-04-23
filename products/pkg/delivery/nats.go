@@ -42,42 +42,85 @@ func (d *delivery) Drain() {
 }
 
 func Subscribe(delivery *delivery, nc *nats.Conn, subjPrefix string, queue string) error {
+	var s string
 
-	createSubj := subjPrefix + ".create"
-	nc.QueueSubscribe(createSubj, queue, delivery.Create)
+	s = subjPrefix + ".create"
+	_, err := nc.QueueSubscribe(s, queue, delivery.Create)
 
-	return nil
+	s = subjPrefix + ".getbyid"
+	_, err = nc.QueueSubscribe(s, queue, delivery.GetByID)
+	/*
+		s = subjPrefix + ".getbyname"
+		_, err = nc.QueueSubscribe(s, queue, delivery.GetByName)
+
+		s = subjPrefix + ".getall"
+		_, err = nc.QueueSubscribe(s, queue, delivery.GetAll)
+
+		s = subjPrefix + ".update"
+		_, err = nc.QueueSubscribe(s, queue, delivery.Update)
+
+		s = subjPrefix + ".delete"
+		_, err = nc.QueueSubscribe(s, queue, delivery.Delete)
+
+		s = subjPrefix + ".updatestock"
+		_, err = nc.QueueSubscribe(s, queue, delivery.UpdateStock)
+	*/
+	return err
 }
 
 func (d *delivery) Create(msg *nats.Msg) {
 	product := &product.Product{}
 	err := json.Unmarshal(msg.Data, &product)
 	if err != nil {
-		log.Println("Can't unmarshal product")
-		jsendReply := jsend.NewFail(err.Error())
-		reply, _ := json.Marshal(&jsendReply)
+		jsendFailReply := jsend.NewFail(err.Error())
+		failReply, _ := json.Marshal(&jsendFailReply)
 
-		d.nc.Publish(msg.Reply, reply)
+		d.nc.Publish(msg.Reply, failReply)
 		return
 	}
 
 	productCreated, err := d.usecase.Create(product)
 	if err != nil {
-		log.Printf("Create product failed. Err: %s", err.Error())
-		jsendReply := jsend.NewFail(err.Error())
-		reply, err := json.Marshal(&jsendReply)
-		if err != nil {
-			log.Println("Can't marshal jsend reply")
-		}
+		jsendFailReply := jsend.NewFail(err.Error())
+		failReply, _ := json.Marshal(&jsendFailReply)
 
-		d.nc.Publish(msg.Reply, reply)
+		d.nc.Publish(msg.Reply, failReply)
 		return
 	}
 
 	jsendReply := jsend.New(productCreated)
 	reply, err := json.Marshal(&jsendReply)
 	if err != nil {
-		log.Println("Can't marshal jsend reply")
+		log.Println("DLV - Create - Can't marshal jsend reply")
+	}
+
+	d.nc.Publish(msg.Reply, reply)
+}
+
+func (d *delivery) GetByID(msg *nats.Msg) {
+	product := &product.Product{}
+	err := json.Unmarshal(msg.Data, &product)
+	if err != nil {
+		jsendFailReply := jsend.NewFail(err.Error())
+		failReply, _ := json.Marshal(&jsendFailReply)
+
+		d.nc.Publish(msg.Reply, failReply)
+		return
+	}
+
+	productRetrieved, err := d.usecase.GetByID(product.ID)
+	if err != nil {
+		jsendFailReply := jsend.NewFail(err.Error())
+		failReply, _ := json.Marshal(&jsendFailReply)
+
+		d.nc.Publish(msg.Reply, failReply)
+		return
+	}
+
+	jsendReply := jsend.New(productRetrieved)
+	reply, err := json.Marshal(&jsendReply)
+	if err != nil {
+		log.Println("DLV - GetByID - Can't marshal jsend reply")
 	}
 
 	d.nc.Publish(msg.Reply, reply)

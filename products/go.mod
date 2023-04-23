@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	clevergo.tech/jsend v1.1.3
-	github.com/BetuelSA/go-helpers/errors v0.0.0-20201006224357-a7baa06c8d7f
 	github.com/go-playground/validator/v10 v10.12.0
 	github.com/nats-io/nats.go v1.25.0
 	github.com/pkg/errors v0.9.1

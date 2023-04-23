@@ -29,8 +29,10 @@ func NewRouter(productsDelivery products.Delivery, pathPrefix string) (*router, 
 			c.JSON(200, gin.H{
 				"message": "productos",
 			})
-			products.POST("/", router.productsDelivery.Create)
 		})
+		// Crear un nuevo producto
+		products.POST("/", router.productsDelivery.Create)
+		products.GET("/:id", router.productsDelivery.GetByID)
 	}
 
 	err := r.Run()
