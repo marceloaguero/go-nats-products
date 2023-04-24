@@ -24,6 +24,10 @@ type NatsMsgData struct {
 type Delivery interface {
 	Create(c *gin.Context)
 	GetByID(c *gin.Context)
+	GetByName(c *gin.Context)
+	GetAll(c *gin.Context)
+	Update(c *gin.Context)
+	Delete(c *gin.Context)
 }
 
 type delivery struct {
@@ -89,5 +93,47 @@ func (d *delivery) GetByID(c *gin.Context) {
 	subj := d.subjPrefix + ".getbyid"
 
 	method := "DLV - Products - GetByID"
+	sendRequest(c, d, method, subj, request, http.StatusOK)
+}
+
+func (d *delivery) GetByName(c *gin.Context) {
+	name := c.Param("name")
+	request := []byte(fmt.Sprintf("{ \"name\": %s }", name))
+	subj := d.subjPrefix + ".getbyname"
+
+	method := "DLV - Products - GetByName"
+	sendRequest(c, d, method, subj, request, http.StatusOK)
+}
+
+func (d *delivery) GetAll(c *gin.Context) {
+	var request []byte = nil
+
+	subj := d.subjPrefix + ".getall"
+
+	method := "DLV - Products - GetAll"
+	sendRequest(c, d, method, subj, request, http.StatusOK)
+}
+
+func (d *delivery) Update(c *gin.Context) {
+	id := c.Param("id")
+	log.Printf("Updating product with ID: %s", id)
+
+	subj := d.subjPrefix + ".update"
+	request, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		jsenderrors.ReturnError(c, err.Error())
+		return
+	}
+
+	method := "DLV - Products - Update"
+	sendRequest(c, d, method, subj, request, http.StatusOK)
+}
+
+func (d *delivery) Delete(c *gin.Context) {
+	id := c.Param("id")
+	request := []byte(fmt.Sprintf("{ \"id\": %s }", id))
+	subj := d.subjPrefix + ".delete"
+
+	method := "DLV - Products - Delete"
 	sendRequest(c, d, method, subj, request, http.StatusOK)
 }
