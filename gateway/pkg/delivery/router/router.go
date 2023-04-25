@@ -37,6 +37,8 @@ func NewRouter(productsDelivery products.Delivery, pathPrefix string) (*router, 
 		products.PUT("/:id", router.productsDelivery.Update)
 		// Eliminar un producto
 		products.DELETE("/:id", router.productsDelivery.Delete)
+		// Actualizar el stock de un producto
+		products.PUT("/:id/updatestock", router.productsDelivery.UpdateStock)
 	}
 
 	err := r.Run()

@@ -28,6 +28,7 @@ type Delivery interface {
 	GetAll(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
+	UpdateStock(c *gin.Context)
 }
 
 type delivery struct {
@@ -135,5 +136,20 @@ func (d *delivery) Delete(c *gin.Context) {
 	subj := d.subjPrefix + ".delete"
 
 	method := "DLV - Products - Delete"
+	sendRequest(c, d, method, subj, request, http.StatusOK)
+}
+
+func (d *delivery) UpdateStock(c *gin.Context) {
+	id := c.Param("id")
+	log.Printf("Updating stock for product with ID: %s", id)
+
+	subj := d.subjPrefix + ".updatestock"
+	request, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		jsenderrors.ReturnError(c, err.Error())
+		return
+	}
+
+	method := "DLV - Products - UpdateStock"
 	sendRequest(c, d, method, subj, request, http.StatusOK)
 }

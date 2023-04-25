@@ -62,10 +62,9 @@ func Subscribe(delivery *delivery, nc *nats.Conn, subjPrefix string, queue strin
 	s = subjPrefix + ".delete"
 	_, err = nc.QueueSubscribe(s, queue, delivery.Delete)
 
-	/*
-		s = subjPrefix + ".updatestock"
-		_, err = nc.QueueSubscribe(s, queue, delivery.UpdateStock)
-	*/
+	s = subjPrefix + ".updatestock"
+	_, err = nc.QueueSubscribe(s, queue, delivery.UpdateStock)
+
 	return err
 }
 
@@ -212,6 +211,31 @@ func (d *delivery) Delete(msg *nats.Msg) {
 	reply, err := json.Marshal(&jsendReply)
 	if err != nil {
 		log.Println("DLV - Delete - Can't marshal jsend reply")
+		JsendFailReply(d, msg, err.Error())
+		return
+	}
+
+	d.nc.Publish(msg.Reply, reply)
+}
+
+func (d *delivery) UpdateStock(msg *nats.Msg) {
+	product := &product.Product{}
+	err := json.Unmarshal(msg.Data, &product)
+	if err != nil {
+		JsendFailReply(d, msg, err.Error())
+		return
+	}
+
+	productUpdated, err := d.usecase.UpdateStock(product.ID, product.Stock)
+	if err != nil {
+		JsendFailReply(d, msg, err.Error())
+		return
+	}
+
+	jsendReply := jsend.New(productUpdated)
+	reply, err := json.Marshal(&jsendReply)
+	if err != nil {
+		log.Println("DLV - UpdateStock - Can't marshal jsend reply")
 		JsendFailReply(d, msg, err.Error())
 		return
 	}
